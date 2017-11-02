@@ -11,8 +11,10 @@ set -e
 # This is the first release of the try to install knxd on Orange Pi PC.
 # This script is adopted from the install_knxd_systemd.sh script
 #
+# v0.2.0   02.11.2017  Michael     Enable UART3 for connecting a TPUART module
+#
 # Open issues:
-# enable UART3 
+# 
 #
 ###############################################################################
 if [ "$(id -u)" != "0" ]; then
@@ -39,6 +41,7 @@ apt-get -y install git
 apt-get -y install debhelper cdbs 
 apt-get -y install libsystemd-dev libsystemd0 pkg-config libusb-dev libusb-1.0-0-dev
 apt-get -y install libev-dev 
+apt-get -y install nmap crudini
 
 # New User knxd 
 # For accessing serial devices => User knxd dialout group
@@ -168,7 +171,7 @@ cat > /etc/default/knxd <<EOF
 # Serial device Raspberry
 # KNXD_OPTIONS="--eibaddr=$EIB_ADDRESS_KNXD --client-addrs=$EIB_START_ADDRESS_CLIENTS_KNXD:$EIB_NUMBER_OF_CLIENT_KNX_CLIENT_ADDRESSES -d -D -T -R -S -i --listen-local=/tmp/knx -b tpuarts:/dev/ttyAMA0"
 # Serial device Orange PC TPUART Backend
-KNXD_OPTIONS="--eibaddr=$EIB_ADDRESS_KNXD --client-addrs=$EIB_START_ADDRESS_CLIENTS_KNXD:$EIB_NUMBER_OF_CLIENT_KNX_CLIENT_ADDRESSES -d -D -T -R -S -i --listen-local=/tmp/knx -b tpuarts:/dev/ttyS0"
+KNXD_OPTIONS="--eibaddr=$EIB_ADDRESS_KNXD --client-addrs=$EIB_START_ADDRESS_CLIENTS_KNXD:$EIB_NUMBER_OF_CLIENT_KNX_CLIENT_ADDRESSES -d -D -T -R -S -i --listen-local=/tmp/knx -b tpuarts:/dev/ttyS3"
 # Tunnel Backend
 # KNXD_OPTIONS="--eibaddr=$EIB_ADDRESS_KNXD --client-addrs=$EIB_START_ADDRESS_CLIENTS_KNXD:$EIB_NUMBER_OF_CLIENT_KNX_CLIENT_ADDRESSES -d -D -T -R -S -i --listen-local=/tmp/knx -b ipt:192.168.56.1"
 # USB Backend
@@ -225,6 +228,11 @@ set +e
 # Disable serial console => Not necessary. UART3 is used
 # sed -e's/console=.*/console=display/g' /boot/armbianEnv.txt --in-place=.bak
 # systemctl disable serial-getty@ttyS0.service > /dev/null 2>&1
+
+# Enable UART3 for connecting a TPUART module
+bin2fex /boot/script.bin /tmp/script.fex
+crudini --set /tmp/script.fex uart3 uart_used 1
+fex2bin /tmp/script.fex /boot/script.bin
 
 
 echo "Please reboot your device!"
