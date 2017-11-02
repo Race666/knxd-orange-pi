@@ -215,15 +215,7 @@ ldconfig
 # Enable at Startup
 systemctl enable knxd.service
 sync
-# Modify /boot/cmdline.txt to disable boot screen over serial interface
-# sed -e's/ console=ttyAMA0,115200 kgdboc=ttyAMA0,115200//g' /boot/cmdline.txt --in-place=.bak
-# Disable Console and Raspberry Pi 3 needs to enable UART1 (http://raspberrypi.stackexchange.com/questions/45570/how-do-i-make-serial-work-on-the-raspberry-pi3)
-# https://www.raspberrypi.org/forums/viewtopic.php?f=28&t=141195
-# https://www.hackster.io/fvdbosch/uart-for-serial-console-or-hat-on-raspberry-pi-3-5be0c2
-# http://www.fhemwiki.de/w/index.php?title=Raspberry_Pi_3:_GPIO-Port_Module_und_Bluetooth&redirect=no
-# Restore ttyAMA0 (dtoverlay=pi3-disable-bt in /)https://openenergymonitor.org/emon/node/12311
-# dtoverlays https://raspberry.tips/faq/raspberry-pi-device-tree-aenderung-mit-kernel-3-18-x-geraete-wieder-aktivieren/
-set +e
+
 
 # Disable serial console => Not necessary. UART3 is used
 # sed -e's/console=.*/console=display/g' /boot/armbianEnv.txt --in-place=.bak
