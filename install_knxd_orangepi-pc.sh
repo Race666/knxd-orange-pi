@@ -96,7 +96,7 @@ else
 	cd knxd
 fi
 
-git checkout stable
+git checkout master
 
 if [ "$APPLY_EMI_TIMEOUT_PATCH" == "y" ]; then
 cat > $BUILD_PATH/patch.emi_timeout <<EOF
