@@ -12,6 +12,9 @@ set -e
 # This script is adopted from the install_knxd_systemd.sh script
 #
 # v0.2.0   02.11.2017  Michael     Enable UART3 for connecting a TPUART module
+# v0.3.0   30.03.2018  Michael     EMI Timeout Patch 
+#                                  systemd service type simple => forking
+#                                  set low latency on serial devices
 #
 # Open issues:
 # 
@@ -93,6 +96,38 @@ else
 fi
 
 git checkout stable
+
+if [ "$APPLY_EMI_TIMEOUT_PATCH" == "y" ]; then
+cat > $BUILD_PATH/patch.emi_timeout <<EOF
+--- src/libserver/emi_common.cpp        2017-10-10 21:39:21.760000000 +0200
++++ src/libserver/emi_common.cpp        2017-10-10 21:40:13.448000000 +0200
+@@ -60,8 +60,11 @@
+     return false;
+   if(!LowLevelFilter::setup())
+     return false;
+-  send_timeout = cfg->value("send-timeout",300) / 1000.;
+-  max_retries = cfg->value("send-retries",3);
++  // send_timeout = cfg->value("send-timeout",300) / 1000.;
++  // max_retries = cfg->value("send-retries",3);
++  send_timeout = cfg->value("send-timeout",6000) / 1000.;
++  max_retries = cfg->value("send-retries",5);
++
+   monitor = cfg->value("monitor",false);
+
+   return true;
+--- tools/version.sh    2017-10-11 09:38:35.448000000 +0200
++++ tools/version.sh    2017-10-11 09:51:55.516000000 +0200
+@@ -5,4 +5,5 @@
+ lgit=\$(git rev-parse --short \$(git rev-list -1 HEAD debian/changelog) )
+ if test "\$git" != "\$lgit" ; then
+        echo -n ":\$git"
++       echo -n "-emipatch"
+ fi
+EOF
+patch -p0 --ignore-whitespace -i $BUILD_PATH/patch.emi_timeout
+fi
+
+
 #git checkout master
 # All previously installed libraries have to be removed
 set +e
@@ -163,6 +198,14 @@ SUBSYSTEM=="usb", ATTR{idVendor}=="135e", ATTR{idProduct}=="0024", ACTION=="add"
 SUBSYSTEM=="usb", ATTR{idVendor}=="04cc", ATTR{idProduct}=="0301", ACTION=="add", GROUP="knxd", MODE="0664"
 # MDT KNX_USB_Interface
 SUBSYSTEM=="usb", ATTR{idVendor}=="16d0", ATTR{idProduct}=="0491", ACTION=="add", GROUP="knxd", MODE="0664"
+# Siemens 148/12 KNX Interface
+SUBSYSTEM=="usb", ATTR{idVendor}=="0908", ATTR{idProduct}=="02dd", ACTION=="add", GROUP="knxd", MODE="0664"
+# Low Latency for  Busware TUL TPUART USB
+ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="204b", KERNELS=="1-4", SYMLINK+="ttyTPUART", RUN+="/bin/setserial /dev/%k low_latency", GROUP="dialout", MODE="0664"
+# Test rules example:
+# udevadm info --query=all --attribute-walk --name=/dev/ttyS0
+# udevadm test /dev/ttyS0 
+# ACTION=="add",SUBSYSTEM=="tty", ATTR{port}=="0x3F8",SYMLINK+="ttyTPUART%n",RUN+="/bin/setserial /dev/%k low_latency", GROUP="dialout", MODE="0664"
 EOF
 
 
@@ -190,7 +233,7 @@ After=network.target
 [Service]
 EnvironmentFile=/etc/default/knxd
 ExecStart=/usr/local/bin/knxd -p /run/knxd/knxd.pid \$KNXD_OPTIONS
-Type=simple
+Type=forking
 PIDFile=/run/knxd/knxd.pid
 User=knxd
 Group=knxd
