@@ -15,6 +15,7 @@ set -e
 # v0.3.0   30.03.2018  Michael     EMI Timeout Patch 
 #                                  systemd service type simple => forking
 #                                  set low latency on serial devices
+# v0.3.1   30.03.2018  Michael     Checkout knxd master 
 #
 # Open issues:
 # 
